@@ -1,0 +1,13 @@
+Options +FollowSymLinks
+Options +Indexes
+RewriteEngine On
+RewriteRule ^bbclone/.*$ - [PT]
+RewriteRule ^([^_]+)_player/(.*)$ index.php?command=$1_player&dir=$2 [NC,L]
+RewriteRule ^rss/(.*)$ index.php?command=rss&dir=$1 [NC,L]
+RewriteRule ^slide/(.*)$ index.php?command=slide&dir=$1 [NC,L]
+RewriteRule ^thumbs/(.*)$ index.php?command=thumbs&dir=$1 [NC,L]
+RewriteRule ^captions/(.*)$ index.php?command=captions&dir=$1 [NC,L]
+RewriteRule ^(.*)/$ index.php?command=gallery&dir=$1
+RewriteRule ^$ index.php?command=gallery&dir= 
+
+ErrorDocument 404 "index.php"
