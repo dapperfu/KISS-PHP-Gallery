@@ -15,21 +15,22 @@ $previewWidth=600; # Width of the preview images on preview page.
 $htmlLinks=FALSE;
 $bbcodeLinks=FALSE;
 /* End Config */
+# Create htaccess file. Required for all functions. This can be commented out after first run. Adds ~1E-5s to execution time.
+makeHtaccess();
 
 /* Baseline Variables. Stuff used everywhere */
 $scriptPath = fixDir(getcwd());
 $baseURL = dirname("http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME']) . "/";
+list($dir,$file) = getArguments($_GET['dir']); # Get the directory & image file
+
 # If the script is called from the command line
 if ($argc) {
 	$_GET['command']="thumbs";
 	$_GET['dir']=$argv[1];
 }
-# Create htaccess file. Required for all functions.
-makeHtaccess();
 # BBClone Setup the bbclone information. Track visits via bbclone.
 define("_BBCLONE_DIR", $scriptPath . "bbclone/");define("COUNTER", _BBCLONE_DIR . "mark_page.php");
-# Get the directory & image file
-list($dir,$file) = getArguments($_GET['dir']);
+
 # Control Central
 switch ($_GET['command']) {
 	case "gallery": # Image Gallery
