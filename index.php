@@ -1103,13 +1103,7 @@ function movie_info($file) {
 /* Thumbnail creation functions */
 # Parse the folders looking for thumbnails that need to be created.
 function thumbnailParse($parseDir = "./", $recurse = TRUE) {
-	global $scriptPath,$dir,$thumbBinary;
-	if (!is_executable($thumbBinary)) {
-		die("$thumbBinary is not executable. Cannot create thumbnails."); 
-	} elseif (basename($thumbBinary)=="gm") {
-		# If the Graphics Magick is used, add the convert command to the binary
-		$thumbBinary.=" convert";
-	}
+	global $scriptPath,$dir;
 	# Add trailing slash.
 	$parseDir = fixDir($parseDir);
 	# Remove the script path from the directory.
@@ -1146,6 +1140,9 @@ function thumbnailParse($parseDir = "./", $recurse = TRUE) {
 # Make the thumbnail.
 function makeThumb($dir, $file, $type) {
 	global $thumbBinary,$scriptPath,$previewWidth,$galleryHeight,$galleryWidth;
+	if (!is_executable($thumbBinary)) {
+		exit("$thumbBinary is not executable. Cannot create thumbnails.");
+	}
 	# makethumbs.php creates thumbnails relative to itself. So replace the script path in $dir with nothing.
 	$dir = str_replace($scriptPath, "", $dir);
 	# Create the thumb directory relative to where the script is.
@@ -1178,8 +1175,12 @@ function makeThumb($dir, $file, $type) {
 	$output=escapeshellarg($thumb_dir . $file);
 	global $thumbBinary;
 	# Create the thumbnail.
-	$command = $thumbBinary." -quality $quality -size $resize -resize $resize +profile '*' $input $output";
-	#echo($command."\n");
+	if (basename($thumbBinary)=="gm") {
+		# If the Graphics Magick is used, add the convert command to the binary
+		$command = $thumbBinary." convert -quality $quality -size $resize -resize $resize +profile '*' $input $output";
+	} else {
+		$command = $thumbBinary." -quality $quality -size $resize -resize $resize +profile '*' $input $output";
+	}
 	exec($command);
 }
 
