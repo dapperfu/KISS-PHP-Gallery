@@ -15,22 +15,22 @@ $previewWidth=600; # Width of the preview images on preview page.
 $htmlLinks=FALSE;
 $bbcodeLinks=FALSE;
 /* End Config */
-# Create htaccess file. Required for all functions. This can be commented out after first run. Adds ~1E-5s to execution time.
-makeHtaccess();
 
 /* Baseline Variables. Stuff used everywhere */
 $scriptPath = fixDir(getcwd());
 $baseURL = dirname("http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME']) . "/";
 list($dir,$file) = getArguments($_GET['dir']); # Get the directory & image file
 
-# If the script is called from the command line
+# Create htaccess file. Required for all functions. This can be commented out after first run. Adds ~1E-5s to execution time.
+makeHtaccess();
+# If the script is called from the command line. Set variables.
 if ($argc) {
 	$_GET['command']="thumbs";
 	$_GET['dir']=$argv[1];
+	$_GET['recursive']=TRUE;
 }
 # BBClone Setup the bbclone information. Track visits via bbclone.
 define("_BBCLONE_DIR", $scriptPath . "bbclone/");define("COUNTER", _BBCLONE_DIR . "mark_page.php");
-
 # Control Central
 switch ($_GET['command']) {
 	case "gallery": # Image Gallery
@@ -67,22 +67,20 @@ switch ($_GET['command']) {
 		define("_BBC_PAGE_NAME", "Thumbs: " . $dir);@include_once (COUNTER);
 		# Lock file to prevent duplicate instances from being created.
 		$lock_file = $scriptPath . "/.lock";
-		# If a lock file exists and the process has been running for less than 5 minutes. Die. Assume something went wrong if it has been running for more than 5
+		# If a lock file exists and the process has been running for less than 5 minutes: Die. 
+		# Assume something went wrong if it has been running for more than 5
 		if (is_file($lock_file)&&(filemtime($lock_file)+300>time())) {
-			exit("Already running...\n");
+		//	exit("Already running...\n");
 		}
 		# Lock file
 		file_put_contents($lock_file, NULL);
-		thumbnailParse($dir, FALSE);
+		thumbnailParse($dir, $_GET['recursive']);
 		unlink($lock_file);
 		exit;
 }
+# If some how the script gets here, go to the URL base.
 header("Locaton:".$baseURL);
 return;
-/*#############################################################################
-Here be Dragons.
-##############################################################################*/
-
 # Header and footer functions. Comment out to include your own custom functions, or add includes to your header/footer.
 function printheader($title = "") {
 	html_header($title);
@@ -585,7 +583,7 @@ function print_movie($file, $player) {
 		echo "$movieName[0] (MP3)";
 	}
 	if (!empty($data['duration_text']))
-		 echo "(" . $data['duration_text'] . ")";
+		 echo " (" . $data['duration_text'] . ")";
 	echo "</a>";
 }
 /* End Movie Functions */
@@ -1079,7 +1077,8 @@ function movie_info($file) {
 		$data['duration_text']="";
 	} else {
 		# ffmpeg dumps file info to stderr so it has to be redirected to stdout so it can be read in.
-		$str = shell_exec("$ffmpegBinary -i \"" . escapeshellarg($scriptPath . $dir . $file) . "\" 2>&1");
+		$cmd="$ffmpegBinary -i " . escapeshellarg($scriptPath . $dir . $file) . " 2>&1";
+		$str = shell_exec($cmd);
 		# Get duration.
 		preg_match('/Duration: ([\\d]+):([\\d]+):([\\d]+)\\./', $str, $matches);
 		$hours = $matches[1];
@@ -1096,7 +1095,7 @@ function movie_info($file) {
 		# If the cache folder doesn't exist.
 		if (!is_dir($scriptPath."cache/" . $dir)) mkdir($scriptPath . "cache/" . $dir, 0755, true);
 		# Write the data.
-		file_put_contents($cacheFile,serialize($data));
+		//file_put_contents($cacheFile,serialize($data));
 	}
 	return $data;
 }
@@ -1137,7 +1136,7 @@ function thumbnailParse($parseDir = "./", $recurse = TRUE) {
 	foreach  ($movies as $movie) {
 		movie_info($movie);
 	}
-	if (count($directories) > 0 && $recurse) {
+	if (count($directories) > 0 && $recurse===TRUE) {
 		foreach($directories as $file) {
 			thumbnailParse($parseDir . $file);
 		}
@@ -1195,7 +1194,7 @@ RewriteRule ^bbclone/.*$ - [PT]
 RewriteRule ^([^_]+)_player/(.*)$ index.php?command=$1_player&dir=$2 [NC,L]
 RewriteRule ^rss/(.?)$ index.php?command=rss&dir=$1 [NC,L]
 RewriteRule ^slide/(.*)$ index.php?command=slide&dir=$1 [NC,L]
-RewriteRule ^thumbs/(.?)$ index.php?command=thumbs&dir=$1 [NC,L]
+RewriteRule ^thumbs/(.*)$ index.php?command=thumbs&dir=$1 [NC,L]
 RewriteRule ^captions/(.?)$ index.php?command=captions&dir=$1 [NC,L]
 RewriteRule ^(.*)/$ index.php?command=gallery&dir=$1
 RewriteRule ^$ index.php?command=gallery&dir= 
