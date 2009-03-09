@@ -70,7 +70,7 @@ switch ($_GET['command']) {
 		# If a lock file exists and the process has been running for less than 5 minutes: Die. 
 		# Assume something went wrong if it has been running for more than 5
 		if (is_file($lock_file)&&(filemtime($lock_file)+300>time())) {
-		//	exit("Already running...\n");
+			exit("Already running...\n");
 		}
 		# Lock file
 		file_put_contents($lock_file, NULL);
@@ -89,6 +89,8 @@ function printfooter() {
 	html_footer();
 }
 /* HTML Header & Footer Functions */
+# Print HTML Header. If you use your own header and footer, the CSS needs to be added to your CSS
+# file (unless you want to use your own CSS); 
 function html_header($title = "") {
 	global $dir, $scriptPath, $baseURL,$galleryWidth,$previewWidth;
 	$GLOBALS['time_start'] = microtime(true);
@@ -835,9 +837,12 @@ function makeCaptions($new_captions) {
 	*/
 ?>
 	<script type="text/javascript">
-function ajaxObject(b,a){var c=this;this.updating=false;this.abort=function(){if(c.updating){c.updating=false;c.AJAX.abort();c.AJAX=null}};this.update=function(g,e){if(c.updating){return false}c.AJAX=null;if(window.XMLHttpRequest){c.AJAX=new XMLHttpRequest()}else{c.AJAX=new ActiveXObject("Microsoft.XMLHTTP")}if(c.AJAX==null){return false}else{c.AJAX.onreadystatechange=function(){if(c.AJAX.readyState==4){c.updating=false;c.callback(c.AJAX.responseText,c.AJAX.status,c.AJAX.responseXML);c.AJAX=null}};c.updating=new Date();if(/post/i.test(e)){var f=d+"?"+c.updating.getTime();c.AJAX.open("POST",f,true);c.AJAX.setRequestHeader("Content-type","application/x-www-form-urlencoded");c.AJAX.setRequestHeader("Content-Length",g.length);c.AJAX.send(g)}else{var f=d+"?"+g+"&timestamp="+(c.updating.getTime());c.AJAX.open("GET",f,true);c.AJAX.send(null)}return true}};var d=b;this.callback=a||function(){}};f
+function ajaxObject(b,a){var c=this;this.updating=false;this.abort=function(){if(c.updating){c.updating=false;c.AJAX.abort();c.AJAX=null}};this.update=function(g,e){if(c.updating){return false}c.AJAX=null;if(window.XMLHttpRequest){c.AJAX=new XMLHttpRequest()}else{c.AJAX=new ActiveXObject("Microsoft.XMLHTTP")}if(c.AJAX==null){return false}else{c.AJAX.onreadystatechange=function(){if(c.AJAX.readyState==4){c.updating=false;c.callback(c.AJAX.responseText,c.AJAX.status,c.AJAX.responseXML);c.AJAX=null}};c.updating=new Date();if(/post/i.test(e)){var f=d+"?"+c.updating.getTime();c.AJAX.open("POST",f,true);c.AJAX.setRequestHeader("Content-type","application/x-www-form-urlencoded");c.AJAX.setRequestHeader("Content-Length",g.length);c.AJAX.send(g)}else{var f=d+"?"+g+"&timestamp="+(c.updating.getTime());c.AJAX.open("GET",f,true);c.AJAX.send(null)}return true}};var d=b;this.callback=a||function(){}};
+
+// Update the caption. Setup to be called in an 'on change' so that all the comments are saved automatically
+// and Submit doesn't need to be pressed.
 function updateCaption(object) {
-	var myRequest = new ajaxObject("");
+	var myRequest = new ajaxObject("<?=rrawurlencode($baseURL."captions/".$dir) ?>");
 	myRequest.update(encodeURIComponent(object.name)+"="+encodeURIComponent(object.value),"POST");
 }
 	</script>
@@ -860,6 +865,8 @@ function updateCaption(object) {
 		}
 	}
 	echo $pictures;
+	
+	# If the jhead binary is executable, add the option to re-embed the captions into the image file.
 	if (is_executable($jheadBinary)) {
 ?>
 	<tr>
@@ -966,103 +973,6 @@ function add_image_xml($path, $image) {
 	$item->appendChild($content);
 }
 /* End RSS Functions */
-
-/* Misc Functions used throughout the file */
-# 
-function getArguments($input) {
-	global $scriptPath,$baseURL;
-	if (is_file($scriptPath.$input)) {
-		$dir=fixDir(dirname($input));
-		$file=basename($input);
-		return array($dir,$file);
-	} elseif (is_file(stripslashes($scriptPath.$input))) {
-		$input=stripslashes($input);
-		$dir=fixDir(dirname($input));
-		$file=basename($input);
-		return array($dir,$file);
-	} elseif (is_dir($scriptPath.$input)) {
-		$dir=fixDir($input);
-		return array($dir,"");
-	} elseif (is_dir(stripslashes($scriptPath.$input))) {
-		$input=stripslashes($input);
-		$dir=fixDir($input);
-		return array($dir,"");
-	}
-	# Should never occur. But if it does, return to the base of the gallery
-	header("Location: $baseURL");
-}
-# Short function to add a trailing slash to the directory value, Used multiple times, so a function was created.
-function fixDir($dir) {
-	return ($dir == ""||$dir == ".") ? "" : (substr($dir, -1) == "/" ? $dir : $dir . "/");
-}
-# Recursive Raw URL Encode. For those people that like non-standard charaters in their file/folder names.
-function rrawurlencode($url) {
-	# Determine if the URL is a relative or absolute URL
-	$absolute=(substr($url,0,7)=='http://')||(substr($url,0,8)=='https://');
-	$exploded_url=explode("/",$url);
-	# Start URL String
-	$url="";
-	# If the url is absolute, we don't want to encode http(s)://
-	if ($absolute) {
-		# Shift it off the beginning of the array.
-		$url=array_shift($exploded_url);
-	}
-	#  Build up the URL raw encoding each directory/file. (rawurlencode will encode / if you pass the entire string)
-	foreach ($exploded_url as $part) {
-		$url.="/".rawurlencode($part);
-	}
-	# Return the new url.
-	return $url;
-}
-
-# Get current file size in human readable format.
-function getFileSize($file) {
-	global $scriptPath,$dir;
-	$size = filesize(realpath($file));
-	$units = array(' B', ' KB', ' MB', ' GB', ' TB');
-	for ($i = 0;$size > 1024;$i++) {
-		$size/= 1024;
-	}
-	return round($size, 2) . $units[$i];
-}
-# Get the exif information from when the photo was taken.
-function getFileDate($file) {
-	@$exif = exif_read_data($file);
-	if (empty($exif['DateTimeOriginal'])) {
-		$timestamp = "";
-	} else {
-		$a = explode(" ", $exif['DateTimeOriginal']);
-		$timestamp = date("F j, Y, g:i a", strtotime(str_replace(":", "/", $a[0]) . " " . $a[1]));
-		if ($timestamp == "December 31, 1969, 4:00 pm") {
-			$timestamp = "";
-		}
-	}
-	return $timestamp;
-}
-function printPath() {
-	global $baseURL, $dir;
-	echo "<!-- Begin Folder Paths -->\n";
-	echo "<div id='path'>\n";
-	echo "<a href=\"".rrawurlencode($baseURL)."\">Picture Gallery</a>";
-	if (!empty($dir)) {
-		$directories = explode("/", trim($dir, '/'));
-		$compound = "";
-		foreach($directories as $directory) {
-			if (empty($directory)) continue;
-			$compound.= $directory . "/";
-			echo " > <a href=\"".rrawurlencode($baseURL.$compound)."\">$directory</a>";
-		}
-		foreach(array(".zip", ".tar") as $archiveExt) {
-			$archive = end($directories) . $archiveExt;
-			if (file_exists($dir . $archive)) {
-				echo "<br><br>\n";
-				echo "\t <a href='$dir.$archive'>Download archive: $archive</a> (" . getFileSize($scriptBase.$dir . $archive) . ")\n";
-			}
-		}
-	}
-	echo "</div>\n";
-	echo "<!-- End Folder Paths -->\n\n";
-}
 
 # Get information about a movie file.
 function movie_info($file) {
@@ -1184,6 +1094,109 @@ function makeThumb($dir, $file, $type) {
 	exec($command);
 }
 
+/* Misc Functions used throughout the file */
+# Assign arguments from the input.
+function getArguments($input) {
+	global $scriptPath,$baseURL;
+	if (is_file($scriptPath.$input)) {
+		$dir=fixDir(dirname($input));
+		$file=basename($input);
+		return array($dir,$file);
+	} elseif (is_file(stripslashes($scriptPath.$input))) {
+		$input=stripslashes($input);
+		$dir=fixDir(dirname($input));
+		$file=basename($input);
+		return array($dir,$file);
+	} elseif (is_dir($scriptPath.$input)) {
+		$dir=fixDir($input);
+		return array($dir,"");
+	} elseif (is_dir(stripslashes($scriptPath.$input))) {
+		$input=stripslashes($input);
+		$dir=fixDir($input);
+		return array($dir,"");
+	}
+	# Should never occur. But if it does, return to the base of the gallery
+	header("Location: $baseURL");
+}
+# Short function to add a trailing slash to the directory value, Used multiple times, so a function was created.
+function fixDir($dir) {
+	return ($dir == ""||$dir == ".") ? "" : (substr($dir, -1) == "/" ? $dir : $dir . "/");
+}
+
+# Recursive Raw URL Encode. For those people that like non-standard charaters in their file/folder names.
+function rrawurlencode($url) {
+	# Determine if the URL is a relative or absolute URL
+	$absolute=(substr($url,0,7)=='http://')||(substr($url,0,8)=='https://');
+	$exploded_url=explode("/",$url);
+	# Start URL String
+	$url="";
+	# If the url is absolute, we don't want to encode http(s)://
+	if ($absolute) {
+		# Shift it off the beginning of the array.
+		$url=array_shift($exploded_url);
+	}
+	#  Build up the URL raw encoding each directory/file. (rawurlencode will encode / if you pass the entire string)
+	foreach ($exploded_url as $part) {
+		$url.="/".rawurlencode($part);
+	}
+	# Return the new url.
+	return $url;
+}
+
+# Get current file size in human readable format.
+function getFileSize($file) {
+	global $scriptPath,$dir;
+	$size = filesize(realpath($file));
+	$units = array(' B', ' KB', ' MB', ' GB', ' TB');
+	for ($i = 0;$size > 1024;$i++) {
+		$size/= 1024;
+	}
+	return round($size, 2) . $units[$i];
+}
+# Get the exif information from when the photo was taken.
+function getFileDate($file) {
+	@$exif = exif_read_data($file);
+	if (empty($exif['DateTimeOriginal'])) {
+		$timestamp = "";
+	} else {
+		$a = explode(" ", $exif['DateTimeOriginal']);
+		$timestamp = date("F j, Y, g:i a", strtotime(str_replace(":", "/", $a[0]) . " " . $a[1]));
+		if ($timestamp == "December 31, 1969, 4:00 pm") {
+			$timestamp = "";
+		}
+	}
+	return $timestamp;
+}
+
+# Print the path to the gallery
+function printPath() {
+	global $baseURL, $dir;
+	# Folder Separator to use when printing folders.
+	# Example 1, " > ": Picture Gallery > Folder 1 > Subfolder 1
+	# Example 2 "/": Picture Gallery/Folder 1/Subfolder 1 
+	$folderSeparator="/";
+	
+	echo "<!-- Begin Folder Paths -->\n";
+	echo "<div id='path'>\n";
+	# Print the base folder.
+	echo "<a href=\"".rrawurlencode($baseURL)."\">Picture Gallery</a>";
+	# If directory isn't empty (We're in a sub folder)
+	if (!empty($dir)) {
+		# Separate the folders
+		$directories = explode("/", trim($dir, '/'));
+		$compound = "";
+		# Add them on to each other until the current folder.
+		foreach($directories as $directory) {
+			if (empty($directory)) continue;
+			$compound.= $directory . "/";
+			echo htmlentities($folderSeparator)."<a href=\"".rrawurlencode($baseURL.$compound)."\">$directory</a>";
+		}
+	}
+	echo "</div>\n";
+	echo "<!-- End Folder Paths -->\n\n";
+}
+
+# Create the htaccsess file if it doesn't exist.
 function makeHtaccess() {
 	global $scriptPath,$baseURL;
 	if (is_file($scriptPath.".htaccess")) return;
@@ -1193,10 +1206,10 @@ Options +Indexes
 RewriteEngine On
 RewriteRule ^bbclone/.*$ - [PT]
 RewriteRule ^([^_]+)_player/(.*)$ index.php?command=$1_player&dir=$2 [NC,L]
-RewriteRule ^rss/(.?)$ index.php?command=rss&dir=$1 [NC,L]
+RewriteRule ^rss/(.*)$ index.php?command=rss&dir=$1 [NC,L]
 RewriteRule ^slide/(.*)$ index.php?command=slide&dir=$1 [NC,L]
 RewriteRule ^thumbs/(.*)$ index.php?command=thumbs&dir=$1 [NC,L]
-RewriteRule ^captions/(.?)$ index.php?command=captions&dir=$1 [NC,L]
+RewriteRule ^captions/(.*)$ index.php?command=captions&dir=$1 [NC,L]
 RewriteRule ^(.*)/$ index.php?command=gallery&dir=$1
 RewriteRule ^$ index.php?command=gallery&dir= 
 EOF;
