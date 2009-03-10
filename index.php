@@ -1,6 +1,7 @@
 <?
 /* Config */
 $thumbBinary="/home/commonlibraries/bin/gm";# Define the binary/command used to create thumbnails. Image Magick and Graphics Magick both work ('convert' or 'gm', respectively.)
+$thumbBinary="/usr/bin/convert";
 # Optional. Leave blank if undefined.
 $ffmpegBinary="/usr/bin/ffmpeg"; # Location of the ffmpeg binary, for displaying video play length.
 $jheadBinary="/usr/bin/jhead"; # Location of the jhead binary, for embedding Captions.
@@ -266,7 +267,7 @@ function preview($currImage) {
 		$fileSize=$cache["fileSize"];
 		$exifDate=$cache["exifDate"];
 		$imgName=$cache["imgName"];
-		$fullLink=$cache["fullLink"];
+		$fullLinkURL=$cache["fullLinkURL"];
 		$preview=$cache["preview"];
 		$gallery=$cache["gallery"];
 	} else {
@@ -293,7 +294,7 @@ function preview($currImage) {
 		$cache["fileSize"]=$fileSize;
 		$cache["exifDate"]=$exifDate;
 		$cache["imgName"]=$imgName;
-		$cache["fullLink"]=$fullLink;
+		$cache["fullLinkURL"]=$fullLinkURL;
 		$cache["preview"]=$preview;
 		$cache["gallery"]=$gallery;
 		file_put_contents($scriptPath."cache/".$dir."cache",serialize($cache));
@@ -360,7 +361,7 @@ var bbCode = Array();
 		//$hardLinks = hardlinks($images_with_thumbs[$i]);
 		echo "previewSrc[$i]=\"" . $preview[$i] . "\";\n";
 		echo "gallerySrc[$i]=\"" . $gallery[$i] . "\";\n";
-		echo "fullLinkURL[$i]=\"" . $fullLink[$i] . "\";\n";
+		echo "fullLinkURL[$i]=\"" . $fullLinkURL[$i] . "\";\n";
 		echo "imgName[$i]=\"" . $imgName[$i] . "\";\n";
 		echo "ratio[$i]=\"" . $ratio[$i]."\";\n";
 		echo "imgSize[$i]=\"Link To Full Picture (".$fileSize[$i].")\";\n";
@@ -372,22 +373,23 @@ var bbCode = Array();
 ?>
 function $(e) {return document.getElementById(e);}
 function keyBoardNav(e) {
-   if (!document.location.href.match("slide")) {
-	return true;
-   }
-   var KeyID = (window.event) ? event.keyCode : e.keyCode;
-   switch(KeyID) {
-	case 37:
-	case 38:
-		changePicture(1);
-		break;
-	case 40:
-	case 39:
-		changePicture(-1);
-		break;
-	default:
+	if (!document.location.href.match("slide")) {
 		return true;
-    }	
+	}
+	var KeyID = (window.event) ? event.keyCode : e.keyCode;
+	switch(KeyID) {
+		case 32:
+		case 37:
+		case 38:
+			changePicture(1);
+		break;
+		case 40:
+		case 39:
+			changePicture(-1);
+		break;
+		default:
+			return true;
+	}	
 }
 
 function changePicture(imgChg) {
