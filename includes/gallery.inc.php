@@ -1,0 +1,2 @@
+<?php 
+// Display the gallery.
