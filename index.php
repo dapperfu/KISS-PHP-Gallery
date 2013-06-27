@@ -18,6 +18,9 @@ $includeFile= ""; # Include file that may have  printheader/printfooter function
 $loadingGif = "http://github.com/jedediahfrey/KISS-PHP-Gallery/raw/master/loading.gif"; # Image to show when loading previews.
 $generatingGif = "http://github.com/jedediahfrey/KISS-PHP-Gallery/raw/master/generating.gif"; # Image to show when generating thumbnails
 /* End Config */
+
+
+
 /* Baseline Variables. Stuff used everywhere */
 $scriptPath = fixDir(getcwd());
 $baseURL = dirname("http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME']) . "/";
@@ -45,7 +48,7 @@ switch ($_GET['command']) {
 		@include_once (COUNTER);
 		# Gallery View
 		gallery();
-		exit;
+		exit;c
 	case "slide": # Slide Show / Preview Mode
 		define("_BBC_PAGE_NAME", "Preview: " . $dir . $file);
 		@include_once (COUNTER);
