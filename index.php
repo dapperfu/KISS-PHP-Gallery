@@ -1,7 +1,7 @@
 <?
 /* Config */
 # Define the binary/command used to create thumbnails. Image Magick and Graphics Magick both work ('convert' or 'gm', respectively.)
-$thumbBinary = "/home/commonlibraries/bin/gm";
+$thumbBinary = "/usr/bin/gm";
 # Optional. Leave blank if undefined.
 $jheadBinary = "/usr/bin/jhead"; # Location of the jhead binary, for embedding Captions.
 $ffmpegBinary = "/usr/bin/ffmpeg"; # Location of the ffmpeg binary, for displaying video play length.
